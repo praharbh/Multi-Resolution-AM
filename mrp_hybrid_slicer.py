@@ -5,6 +5,7 @@
 	Center for Advanced Manufacturing, University of Southern California.
 """
 
+# Importing libraries
 from OCC.Core.STEPControl import STEPControl_Reader
 from OCC.Display.SimpleGui import *
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace,\
@@ -22,10 +23,17 @@ from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakePipe
 import numpy
 import time
 
+# Class contaning basic functions
 class Basic:
+
+	# Defining variables
+	time = 0
+
+	# Function to exit the GUI
 	def Exit():
 		quit()
 
+	# Function to read a step file
 	def read_step(fileloc):
 		step_reader = STEPControl_Reader()
 		step_reader.ReadFile(fileloc)
@@ -33,15 +41,17 @@ class Basic:
 		shape = step_reader.Shape()
 		return shape
 
+	# Function to register a clicked surface
 	def recognize_clicked(shape, *kwargs):
 		for s in shape:
 			if s not in surfaces:
 				surfaces.append(s)
-				# display.DisplayShape(s, color='White', transparency= 0.5, update=True)
+				display.DisplayShape(s, color='White', transparency= 0.5, update=True)
 			else:
 				surfaces.remove(s)
-				# display.DisplayShape(s, color='BLACK', transparency= 0.5,update=True)
+				display.DisplayShape(s, color='BLACK', transparency= 0.5,update=True)
 
+	# Function to create the menu
 	def custom_menu():
 		add_menu('File')
 		add_function_to_menu('File', Basic.save_CSV)
@@ -49,9 +59,8 @@ class Basic:
 		add_menu('Build')
 		add_function_to_menu('Build', Slicing.generate_surface_layer)
 		add_function_to_menu('Build', Slicing.generate_middle_layers)
-		# add_function_to_menu('Build', Slicing.generate_top_surface_layer)
-		# add_function_to_menu('Build', Slicing.generate_bottom_surface_layer)
-
+	
+	# Function to toggle the selection type
 	def shape_selection(type):
 		if type=='F':
 			display.SetSelectionModeFace()
@@ -62,26 +71,24 @@ class Basic:
 		else:
 			display.SetSelectionModeShape()
 
+	# Function to display the path
 	def display_path(lay, col, nozz_dia = 0):
 		wire = BRepBuilderAPI_MakeWire()
 		for i in range(1,len(lay)):
-			# if lay[i-1][0].Distance(lay[i][0]) < 5 and i < len(lay)-1:
 			ray = BRepBuilderAPI_MakeEdge(lay[i-1][0],lay[i][0]).Edge()
-				# wire.Add(ray)
-			# else:
-			# 	display.DisplayShape(wire.Wire(), color = col, update = False)
-			# 	wire = BRepBuilderAPI_MakeWire()
 			if i==len(lay)-1:
 			 	display.DisplayShape(ray, color = col, update = True)
 			else:
 			 	display.DisplayShape(ray, color = col, update = False)
 
+	# Function to display normals on the path
 	def display_normals(lay):
 		for la in lay:
 			rayz = BRepBuilderAPI_MakeEdge(la[0], gp_Pnt((gp_Vec(la[0].XYZ())\
 			 + la[3]*10).XYZ())).Edge()
 			display.DisplayShape(rayz, color = 'BLUE1', update = False)
 
+	# Function to display the depsoited fiber
 	def display_fiber(lay, col, nozz_dia):
 		axis = gp_Ax2()
 		for i in range(1,len(lay)):
@@ -96,7 +103,7 @@ class Basic:
 					else:
 						display.DisplayShape(cylinder.Shape(), color = col, update = True)
 
-	time = 0
+	# Function to calculate the layer build time
 	def display_time(lay):
 		for i in range(1,len(lay)):
 			distance  = lay[i-1][0].Distance(lay[i][0])
@@ -104,24 +111,24 @@ class Basic:
 				Basic.time = Basic.time + distance/20
 		print(Basic.time)
 
-	def display_pipe(lay, col, nozz_dia):
-		circle = Geom_Circle(gp_XOY(), nozz_dia/2)
-		circle_edge = BRepBuilderAPI_MakeEdge(circle).Edge()
-		circle_wire = BRepBuilderAPI_MakeWire()
-		circle_wire.Add(circle_edge)
-		circle_face = BRepBuilderAPI_MakeFace(circle_wire.Wire()).Face()
+	# # Obsolete function to display a pipe along the path
+	# def display_pipe(lay, col, nozz_dia):
+	# 	circle = Geom_Circle(gp_XOY(), nozz_dia/2)
+	# 	circle_edge = BRepBuilderAPI_MakeEdge(circle).Edge()
+	# 	circle_wire = BRepBuilderAPI_MakeWire()
+	# 	circle_wire.Add(circle_edge)
+	# 	circle_face = BRepBuilderAPI_MakeFace(circle_wire.Wire()).Face()
+	# 	wire = BRepBuilderAPI_MakeWire()
+	# 	for i in range(1,len(lay)):
+	# 		if lay[i-1][0].Distance(lay[i][0]) < 5 and i < len(lay)-1:
+	# 			ray = BRepBuilderAPI_MakeEdge(lay[i-1][0],lay[i][0]).Edge()
+	# 			wire.Add(ray)
+	# 		else:
+	# 			pipe = BRepOffsetAPI_MakePipe(wire.Wire(), circle_face).Shape()
+	# 			display.DisplayShape(pipe, color = col, update = True)
+	# 			wire = BRepBuilderAPI_MakeWire()
 
-		wire = BRepBuilderAPI_MakeWire()
-		for i in range(1,len(lay)):
-			if lay[i-1][0].Distance(lay[i][0]) < 5 and i < len(lay)-1:
-				ray = BRepBuilderAPI_MakeEdge(lay[i-1][0],lay[i][0]).Edge()
-				wire.Add(ray)
-			else:
-				pipe = BRepOffsetAPI_MakePipe(wire.Wire(), circle_face).Shape()
-				display.DisplayShape(pipe, color = col, update = True)
-				wire = BRepBuilderAPI_MakeWire()
-
-
+	# Function to save the path as a csv file
 	def save_CSV():
 		if not len(layers) == 0:		
 			for i in range(0,len(layers)):
@@ -154,11 +161,17 @@ class Basic:
 					text_file.write(",")
 					text_file.write(str(round(layers[i][j][3].Z(),3)))
 
-					text_file.write("\r\n")
+					text_file.write("\n")
 				text_file.close()
 			print (len(layers), "layers have been saved")
 
+# Class containing slicing functions
 class Slicing:
+
+	# Defining variables
+	tolerance = 1e-1
+
+	# Function to get a point on a curve
 	def get_point_on_curve(bcurve, u):
 		point = gp_Pnt()
 		tangenty = gp_Vec()
@@ -171,6 +184,7 @@ class Slicing:
 		vectorz.Normalize()
 		return [point,vectorx,tangenty,vectorz]
 
+	# Function to build the next layer
 	def build_the_layer(path, displacement, opposite = False):
 		new_path=[]
 		for p in path:
@@ -180,6 +194,7 @@ class Slicing:
 			new_path.reverse()
 		return new_path
 
+	# Function to get a bounding box for the surface
 	def get_surfaces_boundingbox(faces):
 		minx = []
 		miny = []
@@ -197,6 +212,7 @@ class Slicing:
 			maxz.append(zmax)
 		return min(minx), min(miny), min(minz), max(maxx), max(maxy), max(maxz)
 
+	# Function to get the intersection betaeen a plane and a shape
 	def plane_shape_intersection(plane_face, shape):
 		edges = []
 		section = BRepAlgoAPI_Section(shape, plane_face)
@@ -208,6 +224,7 @@ class Slicing:
 			section_edges.RemoveFirst()
 		return edges
 
+	# Function to sort the surfaces
 	def sort_surfaces(faces, along):
 		min_along = []
 		def get_min(e):
@@ -224,6 +241,7 @@ class Slicing:
 			new_faces.append(faces[min_along[j]['id']])
 		return new_faces			
 
+	# Function generate a path over the surfaces
 	def generate_layer_path(faces, nozz_dia, direc, sur_nozz_dia = 0):
 		slices = []
 		counter1 = 0
@@ -290,8 +308,7 @@ class Slicing:
 			counter2 = counter2 + 1
 		return layer
 
-	tolerance = 1e-1
-	
+	# Function to get the end points of a edge
 	def get_edge_endpoints(edge):
 		end_points = []
 		curve = BRepAdaptor_Curve(edge)
@@ -299,6 +316,7 @@ class Slicing:
 		end_points.append(curve.Value(curve.LastParameter()))
 		return end_points
 
+	# Function to check if two edges connect
 	def do_edges_connect(edgeA,edgeB):
 		distance = []
 		edgeA_end_points = Slicing.get_edge_endpoints(edgeA)
@@ -312,6 +330,7 @@ class Slicing:
 		else:
 			return False
 
+	# Function to check if two edges loop
 	def do_edges_loop(edgeA,edgeB):
 		distance = []
 		edgeA_end_points = Slicing.get_edge_endpoints(edgeA)
@@ -334,11 +353,13 @@ class Slicing:
 		else:
 			return False
 
+	# Function to remove one face from the other
 	def cut_face_from_face(bigface,smallface):
 		cut = BRepAlgoAPI_Cut(bigface,smallface)
 		it = TopoDS_Iterator(cut.Shape())
 		return it.Value()
 
+	# Function to generate faces from wires
 	def get_layer_faces(wires):
 		faces = []
 		bounds = []
@@ -349,7 +370,6 @@ class Slicing:
 			xmin, ymin, zzz, xmax, ymax, zzz = get_boundingbox(face)
 			area.append((xmax - xmin) * (ymax - ymin)) 
 			bounds.append([ xmin, ymin, xmax, ymax])
-
 		return faces
 		for i in range (0,len(faces)):
 			for j in range(0,len(faces)):
@@ -361,6 +381,7 @@ class Slicing:
 					faces.remove(faces[j])
 		return faces
 
+	# Function to generate planer slices
 	def generate_planar_slices(nozz_dia, sur_nozz_dia):
 		xmin, ymin, zmin, xmax, ymax, zmax = get_boundingbox(part_shape)
 		print(xmax-xmin, ",", ymax-ymin, ",", zmax-zmin)
@@ -414,35 +435,15 @@ class Slicing:
 		#   	transparency=0.95, update=True)
 		return contour_faces
 
-	def build_the_layer(path, displacement, opposite = False):
-		new_path=[]
-		for p in path:
-			new_path.append([gp_Pnt((gp_Vec(p[0].XYZ()) + gp_Vec(0,0,1)*displacement)\
-				.XYZ()),p[1],p[2],p[3]])
-		if opposite:
-			new_path.reverse()
-		return new_path
-
+	# Function to generate the conformal surface layer 
 	def generate_surface_layer():
 		layers.append(Slicing.generate_layer_path(surfaces, small_nozz_dia,\
 		 direction))
-		Basic.display_fiber(layers[-1], 'BLACK', small_nozz_dia)
+		Basic.display_path(layers[-1], 'BLACK', small_nozz_dia)
 		Basic.display_time(layers[-1])
 		surfaces.clear()
 
-	# def generate_top_surface_layer():
-	# 	surface_layer = Slicing.generate_layer_path(surfaces, small_nozz_dia,\
-	# 	 direction)
-	# 	top_layer = Slicing.build_the_layer(surface_layer,50)
-	# 	Basic.display_path(top_layer, 'RED', small_nozz_dia)
-
-	# def generate_bottom_surface_layer():
-	# 	surface_layer = Slicing.generate_layer_path(surfaces, small_nozz_dia,\
-	# 	 direction)
-	# 	bottom_layer = Slicing.build_the_layer(surface_layer,-10)
-	# 	Basic.display_path(bottom_layer, 'RED', small_nozz_dia)
-
-
+	# Function to generate the middle planar layers
 	def generate_middle_layers():
 		if direction == 'X':
 			alternate_direction = 'Y'
@@ -456,29 +457,32 @@ class Slicing:
 			Basic.display_fiber(layers[-1], colour[i%5], big_nozz_dia)
 			Basic.display_time(layers[-1])
 
+# Execution begins here
 if __name__ == "__main__":
+
+	# Initilizing the GUI
 	display, start_display, add_menu, add_function_to_menu = init_display()
 
+	# Defining global variables
 	global part_shape, big_nozz_dia, surfaces, direction, colour,\
 	 min_point_dist, layers, all_surfaces 
 	
+	# Initializing the global variables
 	colour =['RED','GREEN','YELLOW','BLUE1','WHITE']
 	colour = ['YELLOW','YELLOW','YELLOW','YELLOW','YELLOW']
 	surfaces = []
 	all_surfaces = []
 	big_nozz_dia = 1.2
-	small_nozz_dia = 0
-	direction = 'X'
-	min_point_dist = 2
+	small_nozz_dia = 8
+	direction = 'Y'
+	min_point_dist = 20
 	layers = []
-
-	part_name='mrp5'
+	part_name='bighood'
 	part_shape = Basic.read_step(('CAD/'+part_name+'.stp'))
 	display.DisplayShape(part_shape, color='BLACK',transparency=0.5, update=True)
 
+	# Begining the GUI
 	Basic.shape_selection('F')
 	display.register_select_callback(Basic.recognize_clicked)
-
 	Basic.custom_menu()
-
 	start_display()
