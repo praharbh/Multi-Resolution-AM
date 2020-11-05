@@ -5,6 +5,7 @@
 	Center for Advanced Manufacturing, University of Southern California.
 """
 
+# Importing libraries
 from OCC.Core.STEPControl import STEPControl_Reader
 from OCC.Display.SimpleGui import *
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace,\
